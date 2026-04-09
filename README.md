@@ -1,59 +1,150 @@
-# Animalguesser
+# 🐱 Cat Breed Guesser
 
-This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 20.3.1.
+<div align="center">
 
-## Development server
+**Test your knowledge of cat breeds in this interactive guessing game!**
 
-To start a local development server, run:
+[![Angular](https://img.shields.io/badge/Angular-20.3-DD0031?style=for-the-badge&logo=angular)](https://angular.io/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178C6?style=for-the-badge&logo=typescript)](https://www.typescriptlang.org/)
+[![License](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)](LICENSE)
+
+[🎮 Play Now](#-how-to-play) • [📖 Documentation](#-documentation) • [🛠️ Installation](#-installation) • [🤝 Support](#-support-the-project)
+
+</div>
+
+---
+
+## 📖 About
+
+**Cat Breed Guesser** is an engaging educational game where your task is to guess the cat breed based on a photo and gradually revealed hints. The fewer hints you use, the more points you earn!
+
+### ✨ Game Features
+
+- 🖼️ **Real cat photos** – fetched from API-Ninjas
+- 🧩 **Hint system** – discover breed traits step by step
+- 🎯 **Quick suggestions** – unlock a list of 6 breeds (with -20 point penalty)
+- 🔥 **Streak system** – build streaks and multiply your points
+- 📊 **Detailed statistics** – learn about each breed's characteristics
+- 💎 **Elegant design** – modern, responsive interface
+- 🌍 **Breed data** – origin, weight, lifespan, personality traits
+
+---
+
+## 🎮 How to Play
+
+1. **View the photo** – a cat image will appear on screen
+2. **Guess the breed** – type the name or choose from suggestions
+3. **Use hints wisely** – each hint reduces your potential points
+4. **Build streaks** – consecutive correct answers multiply your score
+5. **Learn** – after each round, discover details about the breed
+
+### Scoring System
+
+| Action | Points |
+|--------|--------|
+| Correct answer (no hints) | +100 |
+| Correct answer (with hints) | +50 |
+| Using quick suggestions | -20 (penalty) |
+| Streak bonus (streak) | x1.5, x2, x3... |
+
+---
+
+## 🛠️ Installation
+
+### Requirements
+
+- [Node.js](https://nodejs.org/) (v18 or newer)
+- [npm](https://www.npmjs.com/) or [Angular CLI](https://angular.io/cli)
+
+### Installation Steps
 
 ```bash
+# 1. Clone the repository
+git clone https://github.com/CoffeeCod3r/AnimalGuesser.git
+cd AnimalGuesser
+
+# 2. Install dependencies
+npm install
+
+# 3. Start the development server
 ng serve
 ```
 
-Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
+The application will be available at: **http://localhost:4200/**
 
-## Code scaffolding
-
-Angular CLI includes powerful code scaffolding tools. To generate a new component, run:
+### Production Build
 
 ```bash
-ng generate component component-name
+ng build --configuration=production
 ```
 
-For a complete list of available schematics (such as `components`, `directives`, or `pipes`), run:
+Built files will be in the `dist/` directory.
 
-```bash
-ng generate --help
+---
+
+## 📁 Project Structure
+
+```
+AnimalGuesser/
+├── src/
+│   ├── app/
+│   │   ├── components/
+│   │   │   └── cat-game/          # Main game component
+│   │   ├── services/
+│   │   │   ├── cat.service.ts     # Cat API service
+│   │   │   ├── dog.service.ts     # Dog API service (coming soon)
+│   │   │   └── animal.service.ts  # Shared animal service
+│   │   ├── app.ts                 # Main application component
+│   │   └── app.routes.ts          # Routing configuration
+│   ├── styles.css                 # Global styles
+│   └── index.html                 # Main HTML file
+├── angular.json                   # Angular CLI configuration
+├── package.json                   # Project dependencies
+└── tsconfig.json                  # TypeScript configuration
 ```
 
-## Building
+---
 
-To build the project run:
+## 🛠️ Technologies
 
-```bash
-ng build
-```
+| Technology | Version | Description |
+|------------|---------|-------------|
+| **Angular** | 20.3 | Frontend framework |
+| **TypeScript** | 5.9 | Programming language |
+| **RxJS** | 7.8 | Reactive programming |
+| **Angular CLI** | 20.3 | Command-line tool |
+| **Prettier** | - | Code formatting |
 
-This will compile your project and store the build artifacts in the `dist/` directory. By default, the production build optimizes your application for performance and speed.
+### API
 
-## Running unit tests
+- **API-Ninjas Cats API** – database of cat breeds with traits and images
 
-To execute unit tests with the [Karma](https://karma-runner.github.io) test runner, use the following command:
+---
 
-```bash
-ng test
-```
+## 🤝 Support the Project
 
-## Running end-to-end tests
+If you enjoy this game and want to support its development, consider:
 
-For end-to-end (e2e) testing, run:
+- ☕ **Buy me a coffee** – [suppi.pl/coffeecod3r](https://suppi.pl/coffeecod3r)
+- ⭐ **Star the repository** on GitHub
+- 🐛 **Report a bug** or suggest a feature in [Issues](https://github.com/CoffeeCod3r/AnimalGuesser/issues)
 
-```bash
-ng e2e
-```
+---
 
-Angular CLI does not come with an end-to-end testing framework by default. You can choose one that suits your needs.
+## 📄 License
 
-## Additional Resources
+This project is available under the [MIT](LICENSE) license.
 
-For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
+---
+
+## 👨‍💻 Author
+
+**CoffeeCod3r** – created with a passion for cats and coding 🐾
+
+---
+
+<div align="center">
+
+**Have fun and thanks for playing!** 🐱💕
+
+</div>
