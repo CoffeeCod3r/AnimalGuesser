@@ -1,0 +1,7 @@
+6. Napisac to w jednym pliku , bez podzialu na 3 komponenty
+
+- - - - - Dodanie po filmikach - - - - - - - 
+
+- psy
+- inne zwierzeta
+- zapisywanie strikow

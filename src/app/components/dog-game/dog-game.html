@@ -1,0 +1,255 @@
+<!-- src/app/components/dog-game/dog-game.component.html -->
+<div class="game-wrapper">
+  <div class="game-container">
+    <!-- Header -->
+    <header class="game-header">
+      <div class="header-content">
+        <h1 class="game-title">Dog Breed Guesser</h1>
+        <a routerLink="/animals" class="mode-switch">
+          Switch to Animals Mode
+        </a>
+        <a routerLink="/cats" class="mode-switch">
+          Switch to Cat Mode
+        </a>
+      </div>
+      <div class="score-display">
+        <div class="score-item">
+          <span class="score-label">Score</span>
+          <span class="score-value">{{ score }}</span>
+        </div>
+        <div class="score-item">
+          <span class="score-label">Attempts</span>
+          <span class="score-value">{{ attempts }}/{{ maxAttempts }}</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- Loading State -->
+    <div *ngIf="loading" class="loading-container">
+      <div class="loading-spinner"></div>
+      <p class="loading-text">Loading dog breed...</p>
+    </div>
+
+    <!-- Game Content -->
+    <div *ngIf="!loading && dog" class="game-content">
+      <!-- Playing State -->
+      <div *ngIf="gameState === 'playing'" class="playing-section">
+        <!-- Dog Image Card -->
+        <div *ngIf="dog.image_link" class="dog-image-card">
+          <div class="card-header">
+            <h2 class="card-title">Dog Photo</h2>
+          </div>
+          <div class="image-container">
+            <img 
+              [src]="dog.image_link" 
+              [alt]="'Photo of ' + dog.name" 
+              class="dog-photo"
+              (load)="onImageLoad()"
+              (error)="onImageError()"
+            />
+            <div *ngIf="imageLoading" class="image-loading">
+              <div class="loading-spinner small"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Hints Card -->
+        <div class="hints-card">
+          <div class="card-header">
+            <h2 class="card-title">Hints</h2>
+            <span class="hints-counter">{{ hintsRevealed }}/{{ getMaxAvailableHints() }}</span>
+          </div>
+          <div class="hints-grid">
+            <div *ngFor="let hint of getHints()" class="hint-item">
+              <span *ngIf="hint.icon" class="hint-icon">{{ hint.icon }}</span>
+              <div class="hint-content">
+                <div class="hint-label">{{ hint.label }}</div>
+                <div class="hint-value">{{ hint.value }}</div>
+              </div>
+            </div>
+          </div>
+          <button 
+            *ngIf="hintsRevealed < getMaxAvailableHints()" 
+            class="btn-reveal-hint" 
+            (click)="revealHint()">
+            Reveal Another Hint
+          </button>
+        </div>
+
+        <!-- Guess Section -->
+        <div class="guess-card">
+          <h2 class="guess-title">What dog breed is this?</h2>
+          
+          <div class="select-wrapper">
+            <input
+              type="text"
+              [(ngModel)]="searchTerm"
+              (input)="filterDogs()"
+              (keydown)="onSearchKeydown($event)"
+              (focus)="showDropdown = true"
+              placeholder="Type to search dog breeds..."
+              class="animal-select"
+              autocomplete="off"
+            />
+            <div *ngIf="showDropdown && filteredOptions.length > 0" class="dropdown-menu">
+              <div
+                *ngFor="let dogOption of filteredOptions.slice(0, 8)"
+                class="dropdown-item"
+                (click)="selectDog(dogOption)">
+                {{ dogOption }}
+              </div>
+            </div>
+          </div>
+
+          <button 
+            class="btn-guess"
+            [disabled]="!searchTerm.trim()"
+            (click)="checkGuess()">
+            Submit Guess
+          </button>
+
+          <button class="btn-skip" (click)="nextDog()">
+            Skip Dog Breed
+          </button>
+        </div>
+      </div>
+
+      <!-- Won State -->
+      <div *ngIf="gameState === 'won'" class="result-section won">
+        <div class="result-icon success">✓</div>
+        <h2 class="result-title">Congratulations!</h2>
+        <p class="result-subtitle">You guessed correctly</p>
+        <div class="animal-reveal">
+          <h3 class="reveal-label">The dog breed was</h3>
+          <p class="reveal-name">{{ dog.name }}</p>
+        </div>
+
+        <!-- Dog Image -->
+        <div *ngIf="dog.image_link" class="dog-image-container large">
+          <img 
+            [src]="dog.image_link" 
+            [alt]="dog.name" 
+            class="dog-image"
+            (load)="onImageLoad()"
+            (error)="onImageError()"
+          />
+          <div *ngIf="imageLoading" class="image-loading">
+            <div class="loading-spinner"></div>
+          </div>
+        </div>
+
+        <!-- Dog Details -->
+        <div class="animal-details">
+          <h3 class="details-title">Dog Breed Information</h3>
+          <div class="details-grid">
+            <div class="detail-item" *ngIf="dog.min_height_male && dog.max_height_male">
+              <span class="detail-icon">📏</span>
+              <div>
+                <div class="detail-label">Height (Male)</div>
+                <div class="detail-value">{{ dog.min_height_male }} - {{ dog.max_height_male }} inches</div>
+              </div>
+            </div>
+            <div class="detail-item" *ngIf="dog.min_weight_male && dog.max_weight_male">
+              <span class="detail-icon">⚖️</span>
+              <div>
+                <div class="detail-label">Weight (Male)</div>
+                <div class="detail-value">{{ dog.min_weight_male }} - {{ dog.max_weight_male }} lbs</div>
+              </div>
+            </div>
+            <div class="detail-item" *ngIf="dog.min_life_expectancy && dog.max_life_expectancy">
+              <span class="detail-icon">⏳</span>
+              <div>
+                <div class="detail-label">Life Expectancy</div>
+                <div class="detail-value">{{ dog.min_life_expectancy }} - {{ dog.max_life_expectancy }} years</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="characteristics-section">
+            <h4 class="characteristics-title">Characteristics</h4>
+            <div class="characteristics-grid">
+              <div class="characteristic-item" *ngIf="dog.good_with_children !== undefined">
+                <span class="char-label">Good with Children:</span>
+                <span class="char-value">{{ getRatingText(dog.good_with_children) }}</span>
+              </div>
+              <div class="characteristic-item" *ngIf="dog.good_with_other_dogs !== undefined">
+                <span class="char-label">Good with Other Dogs:</span>
+                <span class="char-value">{{ getRatingText(dog.good_with_other_dogs) }}</span>
+              </div>
+              <div class="characteristic-item" *ngIf="dog.good_with_strangers !== undefined">
+                <span class="char-label">Good with Strangers:</span>
+                <span class="char-value">{{ getRatingText(dog.good_with_strangers) }}</span>
+              </div>
+              <div class="characteristic-item" *ngIf="dog.playfulness !== undefined">
+                <span class="char-label">Playfulness:</span>
+                <span class="char-value">{{ getRatingText(dog.playfulness) }}</span>
+              </div>
+              <div class="characteristic-item" *ngIf="dog.trainability !== undefined">
+                <span class="char-label">Trainability:</span>
+                <span class="char-value">{{ getRatingText(dog.trainability) }}</span>
+              </div>
+              <div class="characteristic-item" *ngIf="dog.energy !== undefined">
+                <span class="char-label">Energy Level:</span>
+                <span class="char-value">{{ getRatingText(dog.energy) }}</span>
+              </div>
+              <div class="characteristic-item" *ngIf="dog.barking !== undefined">
+                <span class="char-label">Barking Level:</span>
+                <span class="char-value">{{ getBarkingText(dog.barking) }}</span>
+              </div>
+              <div class="characteristic-item" *ngIf="dog.shedding !== undefined">
+                <span class="char-label">Shedding:</span>
+                <span class="char-value">{{ getRatingText(dog.shedding) }}</span>
+              </div>
+              <div class="characteristic-item" *ngIf="dog.grooming !== undefined">
+                <span class="char-label">Grooming:</span>
+                <span class="char-value">{{ getGroomingText(dog.grooming) }}</span>
+              </div>
+              <div class="characteristic-item" *ngIf="dog.drooling !== undefined">
+                <span class="char-label">Drooling:</span>
+                <span class="char-value">{{ getRatingText(dog.drooling) }}</span>
+              </div>
+              <div class="characteristic-item" *ngIf="dog.protectiveness !== undefined">
+                <span class="char-label">Protectiveness:</span>
+                <span class="char-value">{{ getRatingText(dog.protectiveness) }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="action-buttons">
+          <button class="btn-primary" (click)="nextDog()">Next Dog</button>
+          <button class="btn-secondary" (click)="playAgain()">New Game</button>
+        </div>
+      </div>
+
+      <!-- Lost State -->
+      <div *ngIf="gameState === 'lost'" class="result-section lost">
+        <div class="result-icon failure">✗</div>
+        <h2 class="result-title">Game Over</h2>
+        <p class="result-subtitle">The correct answer was</p>
+        <div class="animal-reveal">
+          <p class="reveal-name">{{ dog.name }}</p>
+        </div>
+
+        <!-- Dog Image -->
+        <div *ngIf="dog.image_link" class="dog-image-container large">
+          <img 
+            [src]="dog.image_link" 
+            [alt]="dog.name" 
+            class="dog-image"
+            (load)="onImageLoad()"
+            (error)="onImageError()"
+          />
+          <div *ngIf="imageLoading" class="image-loading">
+            <div class="loading-spinner"></div>
+          </div>
+        </div>
+
+        <div class="action-buttons">
+          <button class="btn-primary" (click)="nextDog()">Try Another</button>
+          <button class="btn-secondary" (click)="playAgain()">New Game</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

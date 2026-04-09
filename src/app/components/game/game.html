@@ -1,0 +1,200 @@
+<div class="game-wrapper">
+  <div class="game-container">
+    <!-- Header -->
+    <header class="game-header">
+      <div class="header-content">
+        <h1 class="game-title">Animal Guesser</h1>
+        <a [routerLink]="['/cats']" class="mode-switch">
+          Switch to Cats Mode
+        </a>
+        <a [routerLink]="['/dogs']" class="mode-switch">
+          Switch to Dogs Mode
+        </a>
+      </div>
+      <div class="score-display">
+        <div class="score-item">
+          <span class="score-label">Score</span>
+          <span class="score-value">{{ score }}</span>
+        </div>
+        <div class="score-item">
+          <span class="score-label">Attempts</span>
+          <span class="score-value">{{ attempts }}/{{ maxAttempts }}</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- Loading State -->
+    <div *ngIf="loading" class="loading-container">
+      <div class="loading-spinner"></div>
+      <p class="loading-text">Loading animal...</p>
+    </div>
+
+    <!-- Game Content -->
+    <div *ngIf="!loading && animal" class="game-content">
+      <!-- Playing State -->
+      <div *ngIf="gameState === 'playing'" class="playing-section">
+        <!-- Hints Card -->
+        <div class="hints-card">
+          <div class="card-header">
+            <h2 class="card-title">Hints</h2>
+            <span class="hints-counter">{{ hintsRevealed }}/10</span>
+          </div>
+          <div class="hints-grid">
+            <div *ngFor="let hint of getHints()" class="hint-item">
+              <span *ngIf="$any(hint).icon" class="hint-icon">{{ $any(hint).icon }}</span>
+              <div class="hint-content">
+                <div class="hint-label">{{ hint?.label }}</div>
+                <div class="hint-value">{{ hint?.value }}</div>
+              </div>
+            </div>
+          </div>
+          <button 
+            *ngIf="hintsRevealed < 10" 
+            class="btn-reveal-hint" 
+            (click)="revealHint()">
+            Reveal Another Hint
+          </button>
+        </div>
+
+        <!-- Guess Section -->
+        <div class="guess-card">
+          <h2 class="guess-title">What animal is this?</h2>
+          
+          <div class="select-wrapper">
+            <input
+              type="text"
+              [(ngModel)]="searchTerm"
+              (input)="filterAnimals()"
+              (focus)="showDropdown = true"
+              placeholder="Type to search animals..."
+              class="animal-select"
+              autocomplete="off"
+            />
+            <div *ngIf="showDropdown && filteredOptions.length > 0" class="dropdown-menu">
+              <div
+                *ngFor="let animalOption of filteredOptions.slice(0, 8)"
+                class="dropdown-item"
+                (click)="selectAnimal(animalOption)">
+                {{ animalOption }}
+              </div>
+            </div>
+          </div>
+
+          <button 
+            class="btn-guess" 
+            (click)="checkGuess()">
+            Submit Guess
+          </button>
+
+          <button class="btn-skip" (click)="loadNewAnimal()">
+            Skip Animal
+          </button>
+        </div>
+      </div>
+
+      <!-- Won State -->
+      <div *ngIf="gameState === 'won'" class="result-section won">
+        <div class="result-icon success">✓</div>
+        <h2 class="result-title">Congratulations!</h2>
+        <p class="result-subtitle">You guessed correctly</p>
+        <div class="animal-reveal">
+          <h3 class="reveal-label">The animal was</h3>
+          <p class="reveal-name">{{ animal.name }}</p>
+          <p class="reveal-scientific" *ngIf="animal.taxonomy?.scientific_name">
+            {{ animal.taxonomy?.scientific_name }}
+          </p>
+        </div>
+
+        <!-- Animal Details -->
+        <div class="animal-details">
+          <h3 class="details-title">Animal Information</h3>
+          <div class="details-grid">
+            <div class="detail-item" *ngIf="animal.locations && animal.locations.length > 0">
+              <span class="detail-icon">🌍</span>
+              <div>
+                <div class="detail-label">Location</div>
+                <div class="detail-value">{{ animal.locations.join(', ') }}</div>
+              </div>
+            </div>
+            <div class="detail-item" *ngIf="animal.characteristics?.habitat">
+              <span class="detail-icon">🏞️</span>
+              <div>
+                <div class="detail-label">Habitat</div>
+                <div class="detail-value">{{ animal.characteristics?.habitat }}</div>
+              </div>
+            </div>
+            <div class="detail-item" *ngIf="animal.characteristics?.diet">
+              <span class="detail-icon">🍖</span>
+              <div>
+                <div class="detail-label">Diet</div>
+                <div class="detail-value">{{ animal.characteristics?.diet }}</div>
+              </div>
+            </div>
+            <div class="detail-item" *ngIf="animal.characteristics?.lifespan">
+              <span class="detail-icon">⏳</span>
+              <div>
+                <div class="detail-label">Lifespan</div>
+                <div class="detail-value">{{ animal.characteristics?.lifespan }}</div>
+              </div>
+            </div>
+            <div class="detail-item" *ngIf="animal.characteristics?.top_speed">
+              <span class="detail-icon">⚡</span>
+              <div>
+                <div class="detail-label">Top Speed</div>
+                <div class="detail-value">{{ animal.characteristics?.top_speed }}</div>
+              </div>
+            </div>
+            <div class="detail-item" *ngIf="animal.characteristics?.weight">
+              <span class="detail-icon">⚖️</span>
+              <div>
+                <div class="detail-label">Weight</div>
+                <div class="detail-value">{{ animal.characteristics?.weight }}</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="taxonomy-section" *ngIf="animal.taxonomy">
+            <h4 class="taxonomy-title">Taxonomy</h4>
+            <div class="taxonomy-grid">
+              <div class="taxonomy-item" *ngIf="animal.taxonomy.kingdom">
+                <span class="tax-label">Kingdom:</span> {{ animal.taxonomy.kingdom }}
+              </div>
+              <div class="taxonomy-item" *ngIf="animal.taxonomy.class">
+                <span class="tax-label">Class:</span> {{ animal.taxonomy.class }}
+              </div>
+              <div class="taxonomy-item" *ngIf="animal.taxonomy.order">
+                <span class="tax-label">Order:</span> {{ animal.taxonomy.order }}
+              </div>
+              <div class="taxonomy-item" *ngIf="animal.taxonomy.family">
+                <span class="tax-label">Family:</span> {{ animal.taxonomy.family }}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="action-buttons">
+          <button class="btn-primary" (click)="loadNewAnimal()">Next Animal</button>
+          <button class="btn-secondary" (click)="playAgain()">New Game</button>
+        </div>
+      </div>
+
+      <!-- Lost State -->
+      <div *ngIf="gameState === 'lost'" class="result-section lost">
+        <div class="result-icon failure">✗</div>
+        <h2 class="result-title">Game Over</h2>
+        <p class="result-subtitle">The correct answer was</p>
+        <div class="animal-reveal">
+          <p class="reveal-name">{{ animal.name }}</p>
+          <p class="reveal-scientific" *ngIf="animal.taxonomy?.scientific_name">
+            {{ animal.taxonomy?.scientific_name }}
+          </p>
+        </div>
+
+        <div class="action-buttons">
+          <button class="btn-primary" (click)="loadNewAnimal()">Try Another</button>
+          <button class="btn-secondary" (click)="playAgain()">New Game</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

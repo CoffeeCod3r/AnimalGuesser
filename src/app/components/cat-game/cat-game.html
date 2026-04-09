@@ -1,0 +1,534 @@
+<div class="game-wrapper">
+  <div class="game-container">
+    <!-- Header with Enhanced Stats -->
+    <header class="game-header">
+      <div class="header-content">
+        <h1 class="game-title">Cat Breed Guesser</h1>
+        
+        <!-- Coffee Button -->
+        <div class="coffee-section">
+          <a href="https://suppi.pl/coffeecod3r" 
+             target="_blank" 
+             class="coffee-button"
+             title="If you enjoy the game, consider buying me a coffee!">
+            <div class="coffee-icon">☕</div>
+            <div class="coffee-text">
+              <div class="coffee-label">Enjoying the game?</div>
+              <div class="coffee-sublabel">Buy me a coffee!</div>
+            </div>
+          </a>
+        </div>
+      </div>
+      
+      <!-- Enhanced Score Display -->
+      <div class="stats-container">
+        <div class="stat-card primary">
+          <div class="stat-content">
+            <span class="stat-label">Total Score</span>
+            <span class="stat-value">{{ totalScore }}</span>
+          </div>
+        </div>
+        
+        <div class="stat-card" [class.streak-active]="streak > 0">
+          <div class="stat-content">
+            <span class="stat-label">Streak</span>
+            <span class="stat-value">{{ streak }}</span>
+            <span *ngIf="streak > 0" class="streak-message">{{ getStreakMessage() }}</span>
+          </div>
+        </div>
+        
+        <div class="stat-card">
+          <div class="stat-content">
+            <span class="stat-label">Best Streak</span>
+            <span class="stat-value">{{ bestStreak }}</span>
+          </div>
+        </div>
+        
+        <div class="stat-card" [class.danger]="attempts >= maxAttempts">
+          <div class="stat-content">
+            <span class="stat-label">Lives</span>
+            <span class="stat-value">{{ maxAttempts - attempts }}/{{ maxAttempts }}</span>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- Score Animation Popup -->
+    <div *ngIf="showScoreAnimation" class="score-popup">
+      <div class="score-popup-content">
+        <div class="popup-points">+{{ scoreAnimationValue }}</div>
+        <div class="popup-text">Points Earned!</div>
+      </div>
+    </div>
+
+    <!-- Loading State -->
+    <div *ngIf="loading" class="loading-container">
+      <div class="loading-spinner"></div>
+      <p class="loading-text">Loading cat breed...</p>
+    </div>
+
+    <!-- Game Content -->
+    <div *ngIf="!loading && cat" class="game-content">
+      <!-- Playing State -->
+      <div *ngIf="gameState === 'playing'" class="playing-section">
+        <!-- Progress Bar -->
+        <div class="progress-container">
+          <div class="progress-label">
+            <span>Round {{ roundsPlayed + 1 }}</span>
+            <span>Hints: {{ hintsRevealed }}/{{ getMaxAvailableHints() }}</span>
+          </div>
+          <div class="progress-bar">
+            <div class="progress-fill" [style.width.%]="getHintProgress()"></div>
+          </div>
+        </div>
+
+        <!-- Cat Image Card -->
+        <div *ngIf="cat.image_link" class="cat-image-card">
+          <div class="image-frame">
+            <div class="frame-corner tl"></div>
+            <div class="frame-corner tr"></div>
+            <div class="frame-corner bl"></div>
+            <div class="frame-corner br"></div>
+            
+            <div class="image-wrapper">
+              <img 
+                [src]="cat.image_link" 
+                [alt]="'Photo of ' + cat.name" 
+                class="cat-photo"
+                (load)="onImageLoad()"
+                (error)="onImageError()"
+              />
+              <div *ngIf="imageLoading" class="image-loading">
+                <div class="loading-spinner small"></div>
+              </div>
+            </div>
+          </div>
+          <div class="image-caption">
+            Can you identify this cat breed?
+          </div>
+        </div>
+
+        <div class="playing-row">
+          <!-- Hints Section - Cards Layout -->
+          <div class="hints-section">
+            <div class="hints-header">
+              <h2 class="hints-title">Available Clues</h2>
+              <span class="hints-counter">{{ hintsRevealed }}/{{ getMaxAvailableHints() }}</span>
+            </div>
+            
+            <div class="hints-grid">
+              <div *ngFor="let hint of getHints(); let i = index" 
+                  class="hint-card"
+                  [style.animation-delay.ms]="i * 100">
+                <div class="hint-header">
+                  <span class="hint-icon">{{ hint.icon }}</span>
+                  <span class="hint-label">{{ hint.label }}</span>
+                </div>
+                <div class="hint-value">{{ hint.value }}</div>
+              </div>
+              
+              <!-- Locked hints placeholders -->
+              <div *ngFor="let n of [].constructor(getMaxAvailableHints() - hintsRevealed); let i = index" 
+                  class="hint-card locked">
+                <div class="hint-header">
+                  <span class="lock-icon">🔒</span>
+                  <span class="hint-label">Hidden Clue</span>
+                </div>
+                <div class="hint-value">???</div>
+              </div>
+            </div>
+            
+            <button 
+              *ngIf="hintsRevealed < getMaxAvailableHints()" 
+              class="btn-reveal-hint" 
+              (click)="revealHint()">
+              Reveal Next Clue
+            </button>
+          </div>
+          <!-- Guess Section - Now First -->
+          <div class="guess-card">
+            <h2 class="guess-title">What's this breed?</h2>
+            
+            <!-- Quick Suggestions - Locked/Unlocked State -->
+            <div class="quick-suggestions">
+              <div *ngIf="!quickSuggestionsUnlocked" class="suggestions-locked">
+                <div class="lock-icon-large">🔒</div>
+                <p class="lock-title">Quick Options Available</p>
+                <p class="lock-description">Unlock 6 breed suggestions for easier guessing</p>
+                <div class="penalty-warning">⚠️ -20 points penalty if used</div>
+                <button class="btn-unlock" (click)="unlockQuickSuggestions()">
+                  Unlock Quick Options
+                </button>
+              </div>
+
+              <div *ngIf="quickSuggestionsUnlocked && quickSuggestions.length > 0">
+                <p class="suggestions-label">Quick Options (6 breeds):</p>
+                <div class="suggestions-grid">
+                  <button 
+                    *ngFor="let suggestion of quickSuggestions"
+                    class="suggestion-btn"
+                    [class.selected]="selectedGuess === suggestion"
+                    [class.wrong]="isWrongSuggestion(suggestion)"
+                    [disabled]="isWrongSuggestion(suggestion)"
+                    (click)="selectQuickSuggestion(suggestion)">
+                    {{ suggestion }}
+                    <span *ngIf="isWrongSuggestion(suggestion)" class="wrong-mark">✗</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div class="divider">
+              <span class="divider-text">or search manually</span>
+            </div>
+            
+            <div class="select-wrapper">
+              <input
+                type="text"
+                [(ngModel)]="searchTerm"
+                (input)="filterCats()"
+                (keydown)="onSearchKeydown($event)"
+                (focus)="showDropdown = true"
+                placeholder="Type to search cat breeds..."
+                class="animal-select"
+                autocomplete="off"
+              />
+              <div *ngIf="showDropdown && filteredOptions.length > 0" class="dropdown-menu">
+                <div
+                  *ngFor="let catOption of filteredOptions.slice(0, 8)"
+                  class="dropdown-item"
+                  (click)="selectCat(catOption)">
+                  {{ catOption }}
+                </div>
+              </div>
+            </div>
+
+            <button 
+              class="btn-guess"
+              [disabled]="!searchTerm.trim()"
+              (click)="checkGuess()">
+              Submit Answer
+            </button>
+
+            <button class="btn-skip" (click)="nextCat()">
+              Skip This Cat
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Won State -->
+      <div *ngIf="gameState === 'won'" class="result-section won">
+        <div class="result-animation">
+          <div class="confetti"></div>
+          <div class="confetti"></div>
+          <div class="confetti"></div>
+          <div class="confetti"></div>
+          <div class="confetti"></div>
+          <div class="confetti"></div>
+          <div class="confetti"></div>
+          <div class="confetti"></div>
+        </div>
+        
+        <div class="result-icon success">
+          <span class="icon-check">✓</span>
+        </div>
+        
+        <h2 class="result-title">Perfect Match!</h2>
+        <p class="result-subtitle">You identified the breed correctly!</p>
+        
+        <div class="score-breakdown">
+          <div class="breakdown-item">
+            <span class="breakdown-label">Points Earned</span>
+            <span class="breakdown-value">+{{ score }}</span>
+          </div>
+          <div class="breakdown-item highlight">
+            <span class="breakdown-label">Current Streak</span>
+            <span class="breakdown-value">{{ streak }}</span>
+          </div>
+        </div>
+
+        <!-- Coffee Support Section - Only show on success -->
+        <div class="support-section">
+          <div class="support-card">
+            <div class="support-icon">❤️</div>
+            <div class="support-content">
+              <h3 class="support-title">Enjoying the Game?</h3>
+              <p class="support-text">If you're having fun, consider supporting the developer!</p>
+              <a href="https://www.buymeacoffee.com/yourusername" 
+                 target="_blank" 
+                 class="support-button">
+                <span class="coffee-icon-btn">☕</span>
+                Buy Me a Coffee
+              </a>
+              <p class="support-note">Every coffee helps keep this game ad-free and updated!</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="animal-reveal">
+          <h3 class="reveal-label">The Breed Is</h3>
+          <p class="reveal-name">{{ cat.name }}</p>
+        </div>
+
+        <!-- Cat Image -->
+        <div *ngIf="cat.image_link" class="cat-image-container large">
+          <div class="image-badge">Official Photo</div>
+          <img 
+            [src]="cat.image_link" 
+            [alt]="cat.name" 
+            class="cat-image"
+            (load)="onImageLoad()"
+            (error)="onImageError()"
+          />
+        </div>
+
+        <!-- Origin Map -->
+        <div *ngIf="cat.origin" class="origin-map-section">
+          <h3 class="section-title">Origin Location</h3>
+          <div class="map-container">
+            <div class="map-pin">📍</div>
+            <div class="origin-info">
+              <div class="origin-country">{{ cat.origin }}</div>
+              <div class="origin-description">This breed originated in {{ cat.origin }}</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Quick Stats -->
+        <div class="quick-stats">
+          <div class="stat-box" *ngIf="cat.origin">
+            <div class="stat-icon-box">🌍</div>
+            <div class="stat-content-box">
+              <div class="stat-label-box">Origin</div>
+              <div class="stat-value-box">{{ cat.origin }}</div>
+            </div>
+          </div>
+          <div class="stat-box" *ngIf="cat.length">
+            <div class="stat-icon-box">📏</div>
+            <div class="stat-content-box">
+              <div class="stat-label-box">Length</div>
+              <div class="stat-value-box">{{ cat.length }}</div>
+            </div>
+          </div>
+          <div class="stat-box" *ngIf="cat.min_weight && cat.max_weight">
+            <div class="stat-icon-box">⚖️</div>
+            <div class="stat-content-box">
+              <div class="stat-label-box">Weight</div>
+              <div class="stat-value-box">{{ cat.min_weight }}-{{ cat.max_weight }} lbs</div>
+            </div>
+          </div>
+          <div class="stat-box" *ngIf="cat.min_life_expectancy && cat.max_life_expectancy">
+            <div class="stat-icon-box">⏳</div>
+            <div class="stat-content-box">
+              <div class="stat-label-box">Lifespan</div>
+              <div class="stat-value-box">{{ cat.min_life_expectancy }}-{{ cat.max_life_expectancy }} years</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Detailed Information Tabs -->
+        <div class="info-tabs">
+          <div class="tab-content">
+            <!-- Personality Traits -->
+            <div class="info-section">
+              <h4 class="info-section-title">Personality & Temperament</h4>
+              <div class="traits-grid">
+                <div class="trait-card" *ngIf="cat.playfulness !== undefined">
+                  <div class="trait-header">
+                    <span class="trait-icon">🎾</span>
+                    <span class="trait-name">Playfulness</span>
+                  </div>
+                  <div class="trait-bar">
+                    <div class="trait-fill" [style.width.%]="cat.playfulness * 20"></div>
+                  </div>
+                  <div class="trait-text">{{ getRatingText(cat.playfulness) }}</div>
+                </div>
+                
+                <div class="trait-card" *ngIf="cat.intelligence !== undefined">
+                  <div class="trait-header">
+                    <span class="trait-icon">🧠</span>
+                    <span class="trait-name">Intelligence</span>
+                  </div>
+                  <div class="trait-bar">
+                    <div class="trait-fill" [style.width.%]="cat.intelligence * 20"></div>
+                  </div>
+                  <div class="trait-text">{{ getRatingText(cat.intelligence) }}</div>
+                </div>
+                
+                <div class="trait-card" *ngIf="cat.family_friendly !== undefined">
+                  <div class="trait-header">
+                    <span class="trait-icon">👨‍👩‍👧‍👦</span>
+                    <span class="trait-name">Family Friendly</span>
+                  </div>
+                  <div class="trait-bar">
+                    <div class="trait-fill" [style.width.%]="cat.family_friendly * 20"></div>
+                  </div>
+                  <div class="trait-text">{{ getRatingText(cat.family_friendly) }}</div>
+                </div>
+                
+                <div class="trait-card" *ngIf="cat.children_friendly !== undefined">
+                  <div class="trait-header">
+                    <span class="trait-icon">👶</span>
+                    <span class="trait-name">Child Friendly</span>
+                  </div>
+                  <div class="trait-bar">
+                    <div class="trait-fill" [style.width.%]="cat.children_friendly * 20"></div>
+                  </div>
+                  <div class="trait-text">{{ getRatingText(cat.children_friendly) }}</div>
+                </div>
+                
+                <div class="trait-card" *ngIf="cat.other_pets_friendly !== undefined">
+                  <div class="trait-header">
+                    <span class="trait-icon">🐕</span>
+                    <span class="trait-name">Pet Friendly</span>
+                  </div>
+                  <div class="trait-bar">
+                    <div class="trait-fill" [style.width.%]="cat.other_pets_friendly * 20"></div>
+                  </div>
+                  <div class="trait-text">{{ getRatingText(cat.other_pets_friendly) }}</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Care Requirements -->
+            <div class="info-section">
+              <h4 class="info-section-title">Care & Maintenance</h4>
+              <div class="care-grid">
+                <div class="care-card" *ngIf="cat.grooming !== undefined">
+                  <div class="care-icon">✂️</div>
+                  <div class="care-content">
+                    <div class="care-label">Grooming Needs</div>
+                    <div class="care-value">{{ getGroomingText(cat.grooming) }}</div>
+                    <div class="care-bar">
+                      <div class="care-fill" [style.width.%]="cat.grooming * 20"></div>
+                    </div>
+                  </div>
+                </div>
+                
+                <div class="care-card" *ngIf="cat.shedding !== undefined">
+                  <div class="care-icon">🧹</div>
+                  <div class="care-content">
+                    <div class="care-label">Shedding Level</div>
+                    <div class="care-value">{{ getRatingText(cat.shedding) }}</div>
+                    <div class="care-bar">
+                      <div class="care-fill" [style.width.%]="cat.shedding * 20"></div>
+                    </div>
+                  </div>
+                </div>
+                
+                <div class="care-card" *ngIf="cat.general_health !== undefined">
+                  <div class="care-icon">💚</div>
+                  <div class="care-content">
+                    <div class="care-label">General Health</div>
+                    <div class="care-value">{{ getRatingText(cat.general_health) }}</div>
+                    <div class="care-bar">
+                      <div class="care-fill health" [style.width.%]="cat.general_health * 20"></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Fun Facts -->
+            <div class="info-section">
+              <h4 class="info-section-title">Breed Overview</h4>
+              <div class="fun-facts">
+                <div class="fact-item">
+                  <span class="fact-bullet">•</span>
+                  <span class="fact-text">The {{ cat.name }} is known for its unique characteristics and temperament.</span>
+                </div>
+                <div class="fact-item" *ngIf="cat.origin">
+                  <span class="fact-bullet">•</span>
+                  <span class="fact-text">Originated in {{ cat.origin }}, this breed has a rich history.</span>
+                </div>
+                <div class="fact-item" *ngIf="cat.min_life_expectancy && cat.max_life_expectancy">
+                  <span class="fact-bullet">•</span>
+                  <span class="fact-text">With proper care, they can live {{ cat.min_life_expectancy }} to {{ cat.max_life_expectancy }} years.</span>
+                </div>
+                <div class="fact-item" *ngIf="cat.intelligence && cat.intelligence >= 4">
+                  <span class="fact-bullet">•</span>
+                  <span class="fact-text">Highly intelligent breed that can learn tricks and commands easily.</span>
+                </div>
+                <div class="fact-item" *ngIf="cat.playfulness && cat.playfulness >= 4">
+                  <span class="fact-bullet">•</span>
+                  <span class="fact-text">Very playful and energetic, requiring regular interactive play sessions.</span>
+                </div>
+                <div class="fact-item" *ngIf="cat.family_friendly && cat.family_friendly >= 4">
+                  <span class="fact-bullet">•</span>
+                  <span class="fact-text">Excellent family companion, bonds well with all household members.</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="action-buttons">
+          <button class="btn-primary" (click)="nextCat()">
+            <span class="btn-icon">▶️</span>
+            Next Cat
+          </button>
+          <button class="btn-secondary" (click)="playAgain()">
+            <span class="btn-icon">🔄</span>
+            New Game
+          </button>
+        </div>
+      </div>
+
+      <!-- Lost State -->
+      <div *ngIf="gameState === 'lost'" class="result-section lost">
+        <div class="result-icon failure">
+          <span class="icon-x">✗</span>
+        </div>
+        
+        <h2 class="result-title">Not Quite!</h2>
+        <p class="result-subtitle">The correct answer was</p>
+        
+        <div class="animal-reveal">
+          <p class="reveal-name">{{ cat.name }}</p>
+        </div>
+
+        <div class="streak-lost" *ngIf="streak > 0">
+          <p>Streak ended at {{ streak }}</p>
+        </div>
+
+        <!-- Cat Image -->
+        <div *ngIf="cat.image_link" class="cat-image-container large">
+          <img 
+            [src]="cat.image_link" 
+            [alt]="cat.name" 
+            class="cat-image"
+            (load)="onImageLoad()"
+            (error)="onImageError()"
+          />
+        </div>
+
+        <!-- Coffee Support Section - Show on loss too -->
+        <div class="support-section">
+          <div class="support-card">
+            <div class="support-icon">☕</div>
+            <div class="support-content">
+              <h3 class="support-title">Need More Coffee?</h3>
+              <p class="support-text">Keep the developer caffeinated for better updates!</p>
+              <a href="https://www.buymeacoffee.com/yourusername" 
+                 target="_blank" 
+                 class="support-button">
+                <span class="coffee-icon-btn">☕</span>
+                Support Development
+              </a>
+            </div>
+          </div>
+        </div>
+
+        <div class="action-buttons">
+          <button class="btn-primary" (click)="nextCat()">
+            Try Another
+          </button>
+          <button class="btn-secondary" (click)="playAgain()">
+            New Game
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

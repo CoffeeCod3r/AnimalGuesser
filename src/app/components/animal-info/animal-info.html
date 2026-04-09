@@ -1,0 +1,94 @@
+<div class="animal-info" *ngIf="animal">
+  <button class="toggle-details" (click)="toggleDetails()">
+    <span class="arrow">{{ showDetails ? '▼' : '▶' }}</span>
+    {{ showDetails ? 'Hide' : 'Show' }} Animal Details
+  </button>
+
+  <div class="details-content" *ngIf="showDetails">
+    
+    <!-- Sekcja zdjęć -->
+    <div class="images-section" *ngIf="hasImages">
+      <h4 class="section-title">Images</h4>
+      <div class="image-gallery">
+        <div class="main-image-container">
+          <div class="image-navigation">
+            <button class="nav-button prev" (click)="previousImage()" *ngIf="animalImages.length > 1">‹</button>
+            <img 
+              *ngIf="selectedImage"
+              [src]="selectedImage.original || selectedImage.thumbnail" 
+              [alt]="selectedImage.title || animal.name"
+              (error)="onImageError($event)"
+              class="main-image"
+            >
+            <button class="nav-button next" (click)="nextImage()" *ngIf="animalImages.length > 1">›</button>
+          </div>
+          <div class="image-counter" *ngIf="animalImages.length > 1">
+            {{ selectedImageIndex + 1 }} / {{ animalImages.length }}
+          </div>
+        </div>
+
+        <div class="thumbnail-grid" *ngIf="animalImages.length > 1">
+          <div 
+            *ngFor="let image of animalImages; let i = index"
+            class="thumbnail-container"
+            [class.active]="i === selectedImageIndex"
+            (click)="selectImage(i)"
+          >
+            <img 
+              [src]="image.thumbnail" 
+              [alt]="image.title"
+              (error)="onImageError($event)"
+              class="thumbnail"
+            >
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Sekcja charakterystyk -->
+    <div class="info-grid" *ngIf="animalCharacteristics.length > 0">
+      <div class="info-card" *ngFor="let item of animalCharacteristics">
+        <div class="info-label">{{ item.label }}</div>
+        <div class="info-value">{{ item.value }}</div>
+      </div>
+    </div>
+
+    <!-- Sekcja taksonomii -->
+    <div class="taxonomy" *ngIf="animal.taxonomy">
+      <h4 class="section-title">Taxonomy</h4>
+      <div class="taxonomy-grid">
+        <div class="taxonomy-item" *ngIf="animal.taxonomy.kingdom">
+          <strong>Kingdom:</strong> {{ animal.taxonomy.kingdom }}
+        </div>
+        <div class="taxonomy-item" *ngIf="animal.taxonomy.phylum">
+          <strong>Phylum:</strong> {{ animal.taxonomy.phylum }}
+        </div>
+        <div class="taxonomy-item" *ngIf="animal.taxonomy.class">
+          <strong>Class:</strong> {{ animal.taxonomy.class }}
+        </div>
+        <div class="taxonomy-item" *ngIf="animal.taxonomy.order">
+          <strong>Order:</strong> {{ animal.taxonomy.order }}
+        </div>
+        <div class="taxonomy-item" *ngIf="animal.taxonomy.family">
+          <strong>Family:</strong> {{ animal.taxonomy.family }}
+        </div>
+        <div class="taxonomy-item" *ngIf="animal.taxonomy.genus">
+          <strong>Genus:</strong> {{ animal.taxonomy.genus }}
+        </div>
+        <div class="taxonomy-item" *ngIf="animal.taxonomy.scientific_name">
+          <strong>Scientific Name:</strong> <em>{{ animal.taxonomy.scientific_name }}</em>
+        </div>
+      </div>
+    </div>
+
+    <!-- Sekcja lokalizacji -->
+    <div class="locations" *ngIf="animal.locations && animal.locations.length > 0">
+      <h4 class="section-title">Geographic Locations</h4>
+      <div class="location-tags">
+        <span class="tag" *ngFor="let location of animal.locations">
+          {{ location }}
+        </span>
+      </div>
+    </div>
+  </div>
+</div>
